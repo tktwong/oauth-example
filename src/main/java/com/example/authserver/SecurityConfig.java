@@ -1,5 +1,6 @@
 package com.example.authserver;
 
+import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -8,9 +9,14 @@ import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.factory.PasswordEncoderFactories;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.provider.ClientDetailsService;
 import org.springframework.security.oauth2.provider.approval.ApprovalStore;
 import org.springframework.security.oauth2.provider.approval.TokenApprovalStore;
@@ -19,21 +25,55 @@ import org.springframework.security.oauth2.provider.request.DefaultOAuth2Request
 import org.springframework.security.oauth2.provider.token.TokenStore;
 import org.springframework.security.oauth2.provider.token.store.InMemoryTokenStore;
 
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
+@Log4j2
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
 	@Autowired
 	private ClientDetailsService clientDetailsService;
- 
+
+	@Autowired
+	private InMemoryUserDetailsService inMemoryUserDetailsService;
+
 	@Autowired
     public void globalUserDetails(AuthenticationManagerBuilder auth) throws Exception {
-        auth.inMemoryAuthentication()
-        .withUser("admin").password("{noop}adminpass").roles("ADMIN","USER").and()
-        .withUser("Archna").password("{noop}archna").roles("ADMIN","USER").and()
-        .withUser("user").password("{noop}pass123").roles("USER");
+		auth.userDetailsService(inMemoryUserDetailsService).passwordEncoder(passwordEncoder());
     }
-	
+
+    @Override
+	public void configure(WebSecurity web) {
+		web.debug(false);
+	}
+
+    @Bean
+	public PasswordEncoder passwordEncoder() {
+		return PasswordEncoderFactories.createDelegatingPasswordEncoder();
+	}
+
+	@Bean
+	public Map<String, UserEntity> userMap() {
+		Map users = new HashMap<String, UserEntity>();
+		users.put("admin", UserEntity.builder()
+				.username("admin")
+				.password(passwordEncoder().encode("password"))
+				.roles(Arrays.asList("ADMIN","MANAGER"))
+				.build());
+		users.put("terry", UserEntity.builder()
+				.username("terry")
+				.password(passwordEncoder().encode("password"))
+				.roles(Arrays.asList("DEVELOPER"))
+				.build());
+		users.put("tommy", UserEntity.builder()
+				.username("tommy")
+				.password(passwordEncoder().encode("password"))
+				.roles(Arrays.asList("MASTER"))
+				.build());
+		return users;
+	}
  
     @Override
     @Order(Ordered.HIGHEST_PRECEDENCE)
@@ -81,7 +121,4 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 		store.setTokenStore(tokenStore);
 		return store;
 	}
-
-
-
 }

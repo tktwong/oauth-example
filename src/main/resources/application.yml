@@ -4,8 +4,8 @@ server:
 oauth:
   appClients:
     -
-      clientId: exampleClient
-      clientSecret: "{noop}exampleSecret"
+      clientId: app1Client
+      clientSecret: app1Secret
       authorizedGrantTypes:
         - password
         - refresh_token

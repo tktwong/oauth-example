@@ -6,6 +6,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.config.annotation.configurers.ClientDetailsServiceConfigurer;
 import org.springframework.security.oauth2.config.annotation.web.configuration.AuthorizationServerConfigurerAdapter;
 import org.springframework.security.oauth2.config.annotation.web.configuration.EnableAuthorizationServer;
@@ -26,7 +27,7 @@ import java.util.Map;
 @EnableAuthorizationServer
 public class AuthServerConfig extends AuthorizationServerConfigurerAdapter {
 	
-	private static String REALM="CRM_REALM";
+	private static String REALM="TEST_REALM";
 
 	private static final int THIRTY_DAYS = 60 * 60 * 24 * 30; 
 	
@@ -43,6 +44,9 @@ public class AuthServerConfig extends AuthorizationServerConfigurerAdapter {
 	@Autowired
 	private OAuthClientProperties oAuthClientProperties;
 
+	@Autowired
+	private PasswordEncoder passwordEncoder;
+
 	@Bean
 	@ConditionalOnProperty(prefix="security.oauth2.client",name="storeType" ,havingValue="inMemory", matchIfMissing=true)
 	public InMemoryClientDetailsService inMemoryClientDetailsService(){
@@ -51,7 +55,7 @@ public class AuthServerConfig extends AuthorizationServerConfigurerAdapter {
 		oAuthClientProperties.getAppClients().forEach(appClient -> {
 			BaseClientDetails clientDetails = new BaseClientDetails();
 			clientDetails.setClientId(appClient.getClientId());
-			clientDetails.setClientSecret(appClient.getClientSecret());
+			clientDetails.setClientSecret(passwordEncoder.encode(appClient.getClientSecret()));
 			clientDetails.setScope(new ArrayList(appClient.getScopes()));
 			clientDetails.setAuthorizedGrantTypes(new ArrayList(appClient.authorizedGrantTypes));
 			clientDetails.setAccessTokenValiditySeconds(3600);
@@ -70,8 +74,6 @@ public class AuthServerConfig extends AuthorizationServerConfigurerAdapter {
 	public void configure(AuthorizationServerEndpointsConfigurer endpoints) throws Exception {
 		endpoints.tokenStore(tokenStore).userApprovalHandler(userApprovalHandler)
 		.authenticationManager(authenticationManager);
-		
-
 	}
  
 	@Override
