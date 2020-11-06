@@ -15,6 +15,7 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.provider.ClientDetailsService;
@@ -40,6 +41,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 	private InMemoryUserDetailsService inMemoryUserDetailsService;
 
 	@Autowired
+	private CustomAuthenticationProvider authenticationProvider;
+
+	@Autowired
     public void globalUserDetails(AuthenticationManagerBuilder auth) throws Exception {
 		auth.userDetailsService(inMemoryUserDetailsService).passwordEncoder(passwordEncoder());
     }
@@ -51,7 +55,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Bean
 	public PasswordEncoder passwordEncoder() {
-		return PasswordEncoderFactories.createDelegatingPasswordEncoder();
+		return new BCryptPasswordEncoder();
 	}
 
 	@Bean
@@ -91,8 +95,12 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 	  	.httpBasic()
 	  		.realmName("CRM_REALM");
     }
- 
-	
+
+	@Override
+	protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+		auth.authenticationProvider(authenticationProvider);
+	}
+
     @Override
     @Bean
     public AuthenticationManager authenticationManagerBean() throws Exception {
